@@ -1,3 +1,9 @@
+---
+output: 
+  html_document: 
+    keep_md: yes
+---
+
 Loans exploration 
 by Kirill Zayets
 
@@ -795,10 +801,10 @@ the data set?
   There is moderate correlation between BorrowerAPR and CreditScoreRangeLower and BorrowerAPR and LoanOriginalAMount.
   If we introduce loan amount ranges we will see that the greater loan is the lower APR customer given.
 
-  > a) From State to State number of loans with problems (defaulted, prolonged, charged-off) doesn't fluctuate much and it was about __10-12% on average__. From top 5 states New York has better/lower values of charged-off and defaulted groups. Wyoming has least of charged-off customers over all states. Most % of completed loans is in Utah. North Dakota, Montana, New Mexico, Rhode Island, Utah, Alabama, Kansas, Minnesota,Washington, Illinois all of them have somewhat like increased chances to meet "defaulted" customers. I found 5000 rows which don’t belong to any state. 1/3 of the data came from 3 four states : CA, TX, NY as most populated states.
+  > a) From State to State number of loans with problems (defaulted, prolonged, charged-off) doesn't fluctuate much and it was about __10-12% on average__. From top 5 states New York has better/lower values of charged-off and defaulted groups. Wyoming has least of charged-off customers over all states. Most % of completed loans is in Utah. North Dakota, Montana, New Mexico, Rhode Island, Utah, Alabama, Kansas, Minnesota,Washington, Illinois all of them have somewhat like increased chances to meet "defaulted" customers. I found 5000 rows which don???t belong to any state. 1/3 of the data came from 3 four states : CA, TX, NY as most populated states.
   > b) Most of loans taken by customer __with income range 25-50k__. Second place take the ones with income 50-75k. __The most "defaulted" borrowers are those with income range $25k-$40k__. Same stands for "Charged off" group. Maximum loan amount taken was 35k. It appears the most popular loan is *4k, second 10k and third 15k respectively*. Only those who earn 100+k has loans greater that 30k. Greatest percentage (7-12.5%) of "charged-off" customers were in group where income belongs to 25-40k range and loan taken not above 7.5k. Same goes for "defaulted" group (~1.25%). Second next group with income range 50-75k.
   
-  > c) Occupation for most of customers set to “Other”, second popular was “Professional” and 2 next were “Computer Programmer” and “Executive”. 1-25k very rarely seen among loan takers. 100+k well presented across many specialties. There were 603 rows and 781 rows of either Not employed or with $0 income. Strange customers for bank or just errors. Among customer you could find the ones with ~99 minor crimes (debt not paid in time ) committed.
+  > c) Occupation for most of customers set to ???Other???, second popular was ???Professional??? and 2 next were ???Computer Programmer??? and ???Executive???. 1-25k very rarely seen among loan takers. 100+k well presented across many specialties. There were 603 rows and 781 rows of either Not employed or with $0 income. Strange customers for bank or just errors. Among customer you could find the ones with ~99 minor crimes (debt not paid in time ) committed.
   
 
 ### Did you observe any interesting relationships between the other features \
