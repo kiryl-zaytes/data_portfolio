@@ -11,7 +11,7 @@ by Kirill Zayets
 
 If you were a banker whom you would not want to see among your customers ? Is there any connections between how much money do people earn and how likely they will not be able to make payments for their loans. Maybe the place where the one is living makes impact on his ability to pay on time? 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+```{r echo = FALSE, message = FALSE, warning = FALSE, packages}
 library(ggplot2)
 library(GGally)
 library(scales)
@@ -29,62 +29,80 @@ library(MASS)
 library(ggrepel)
 ```
 
-```{r Load_the_Data, include=FALSE}
+```{r Load_the_Data, include = FALSE}
 # Load the Data
 loan_df <- read.csv("prosperLoanData.csv")
-target_failed <- c("Chargedoff", 
-                   "Defaulted", 
-                   "Past Due (<30days)", 
+target_failed <- c("Chargedoff",
+                   "Defaulted",
+                   "Past Due (<30days)",
                    "Past Due (>30days)")
-target_full <-c(target_failed,"Completed", "Current" )
-colors1 <- c("Chargedoff" = "darksalmon", 
-             "Defaulted" = "khaki3", 
-             "Past Due (<30days)" = "purple1", 
-             "Past Due (>30days)" = "deeppink", 
-             "Cancelled" = "Black", 
-             "Completed" = "green4", 
-             "Current" = "steelblue2", 
-             "FinalPaymentInProgress"="Grey")
+target_full <- c(target_failed, "Completed", "Current")
+colors1 <- c(
+  "Chargedoff" = "darksalmon",
+  "Defaulted" = "khaki3",
+  "Past Due (<30days)" = "purple1",
+  "Past Due (>30days)" = "deeppink",
+  "Cancelled" = "Black",
+  "Completed" = "green4",
+  "Current" = "steelblue2",
+  "FinalPaymentInProgress" = "Grey"
+)
 
-cut_loan <- function(df){
+cut_loan <- function(df) {
   filter(df, !is.na(LoanOriginalAmount))$LoanOriginalAmount %>%
-  cut(c(0,5001, 10001, 15001, 20001, 40000), 
-      labels = c("<5k","5-10k","10-15k","15-20k","20-50k"))
+    cut(
+      c(0, 5001, 10001, 15001, 20001, 40000),
+      labels = c("<5k", "5-10k", "10-15k", "15-20k", "20-50k")
+    )
 }
 
-theme.set <- function(plot_type , xl, yl, x_element_text, y_element_text, legend_pos, guide){
-  if (missing(xl)){
-    xl = "Default"
+theme.set <-
+  function(plot_type ,
+           xl,
+           yl,
+           x_element_text,
+           y_element_text,
+           legend_pos,
+           guide) {
+    if (missing(xl)) {
+      xl = "Default"
+    }
+    if (missing(yl)) {
+      yl = "Default"
+    }
+    if (missing(x_element_text)) {
+      x_element_text = list(face = "bold",
+                            size = 6,
+                            angle = 90)
+    }
+    if (missing(y_element_text)) {
+      y_element_text = list(face = "bold",
+                            size = 6,
+                            angle = 0)
+    }
+    if (missing(guide)) {
+      guide = list(keywidth = 1, keyheight = 1)
+    }
+    if (missing(legend_pos)) {
+      legend_pos = "right"
+    }
+    
+    pl <- function()
+      plot_type +
+      xlab(xl) +
+      ylab(yl) +
+      theme(
+        axis.text.x = do.call(element_text, x_element_text),
+        axis.text.y = do.call(element_text, y_element_text),
+        legend.position = legend_pos
+      ) +
+      guides(fill = do.call(guide_legend, guide))
+    
   }
-  if (missing(yl)){
-    yl = "Default"
-  }
-  if (missing(x_element_text)){
-    x_element_text = list(face="bold", size=6, angle=90)
-  }
-  if (missing(y_element_text)){
-    y_element_text = list(face="bold", size=6, angle=0)
-  }
-   if (missing(guide)){
-    guide = list(keywidth = 1, keyheight = 1)
-   }
-  if (missing(legend_pos)){
-    legend_pos = "right"
-  }
-  
-  pl <- function() plot_type + 
-    xlab(xl) + 
-    ylab(yl) + 
-    theme(axis.text.x = do.call(element_text, x_element_text), 
-          axis.text.y = do.call(element_text, y_element_text),
-          legend.position = legend_pos) + 
-    guides(fill = do.call(guide_legend, guide))
-  
-}
 
-theme.addcolor <- function(plot){
-  plot + 
-    scale_fill_manual(values = colors1) + 
+theme.addcolor <- function(plot) {
+  plot +
+    scale_fill_manual(values = colors1) +
     scale_color_manual(values = colors1)
 }
 
@@ -92,7 +110,7 @@ theme.addcolor <- function(plot){
 
 > # Summary of the data set
 
-```{r echo=FALSE, warning=FALSE}
+```{r echo = FALSE, warning = FALSE}
 names(loan_df)
 length(loan_df$ListingKey)
 ```
@@ -101,7 +119,6 @@ We have 113937 rows of loans made across US. Each row divided into 81 columns. S
 
 
 ```{r echo=FALSE, fig.retina=2, message=FALSE, warning=FALSE, out.height="100%", out.width="100%", paged.print=FALSE}
-
 loan_df <- within(loan_df, 
                    BorrowerState <- factor(
                      BorrowerState, levels=names(sort(table(BorrowerState), 
@@ -181,10 +198,16 @@ head(subset(loan_df, IncomeRange == "Not employed")[, c("LoanStatus",
 I think time has come to get rid of data with $0, unemployed, NA values from data set. It does not look like this data could help us to find anything interesting at this stage. Lets remove and adjust factor levels.
 
 ```{r echo=FALSE, fig.align='center', out.width = "80%", out.height="80%", fig.retina = 2}
-loan_df <- subset(loan_df, IncomeRange != "$0" & !is.na(IncomeRange) & IncomeRange != "Not employed" & IncomeRange != "Not displayed")
-p_income_clean <- ggplot(loan_df) + geom_bar(aes(IncomeRange)) + 
-  scale_y_continuous(breaks = seq(7000,35000, 5000))
-  theme.set(p_income_clean,"income range", "amount per range")()
+loan_df <-
+  subset(
+  loan_df,
+  IncomeRange != "$0" &
+  !is.na(IncomeRange) &
+  IncomeRange != "Not employed" & IncomeRange != "Not displayed"
+  )
+  p_income_clean <- ggplot(loan_df) + geom_bar(aes(IncomeRange)) +
+  scale_y_continuous(breaks = seq(7000, 35000, 5000))
+  theme.set(p_income_clean, "income range", "amount per range")()
 ```
 
 The plot above shows distribution over 5 income ranges. Taking into consideration that group 100+ potentially could consist of many other levels we could say that plot is skewed right with long tail in the end.
@@ -233,7 +256,7 @@ loan_df <-
 
 
 ```{r echo=FALSE, fig.align='center', fig.asp=0.7, fig.retina=2, warning=FALSE}
-p_occ_income_un <- ggplot(loan_df, aes(Occupation)) + geom_bar() + coord_flip() +
+p_occ_income_un <- ggplot(loan_df, aes(Occupation)) + geom_bar() + coord_flip()+
   scale_y_log10()
 theme.set(p_occ_income_un, 
           "occupation", 
@@ -442,66 +465,86 @@ From the chart above we are seeing that the group where most "defaulted" borrowe
 Lets regroup "Past Due" statuses into two groups <30 and >30 days and look at statuses over states and failed statuses over states in particular.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-levels(loan_df$LoanStatus) <- c(levels(loan_df$LoanStatus), 
-                                c("Past Due (>30days)"), 
+levels(loan_df$LoanStatus) <- c(levels(loan_df$LoanStatus),
+                                c("Past Due (>30days)"),
                                 "Past Due (<30days)")
-
-loan_df$LoanStatus[loan_df$LoanStatus %in% c("Past Due (31-60 days)",
-                                             "Past Due (61-90 days)", 
-                                             "Past Due (91-120 days)", 
-                                             "Past Due (>120 days)")] <- "Past Due (>30days)"
-
-loan_df$LoanStatus[loan_df$LoanStatus %in% c("Past Due (1-15 days)", 
-                                             "Past Due (16-30 days)")] <- "Past Due (<30days)"
-
-mean_by_states <-loan_df %>% 
-  dplyr::select(BorrowerState, LoanStatus) %>% 
-  filter(LoanStatus %in% target_full) %>%
-  group_by(BorrowerState,LoanStatus) %>% 
-  summarise(n=n()) %>% 
-  mutate(freq=n/sum(n))
+                                
+                                loan_df$LoanStatus[loan_df$LoanStatus %in% c(
+                                "Past Due (31-60 days)",
+                                "Past Due (61-90 days)",
+                                "Past Due (91-120 days)",
+                                "Past Due (>120 days)"
+                                )] <- "Past Due (>30days)"
+                                
+                                loan_df$LoanStatus[loan_df$LoanStatus %in% c(
+                                "Past Due (1-15 days)",
+                                "Past Due (16-30 days)")] <-
+                                "Past Due (<30days)"
+                                
+                                mean_by_states <- loan_df %>%
+                                dplyr::select(BorrowerState, LoanStatus) %>%
+                                filter(LoanStatus %in% target_full) %>%
+                                group_by(BorrowerState, LoanStatus) %>%
+                                summarise(n = n()) %>%
+                                mutate(freq = n / sum(n))
 
 ```
 
 ```{r echo=FALSE, fig.retina=2, out.height="100%", out.width="100%"}
-p_borrows_over_state <- ggplot(data=loan_df, aes(BorrowerState)) + 
-  geom_bar(aes(fill=LoanStatus)) 
+p_borrows_over_state <- ggplot(data = loan_df, aes(BorrowerState)) +
+  geom_bar(aes(fill = LoanStatus))
 #plot_type , xl, yl, x_element_text, y_element_text, legend_pos, guide
-theme.set(p_borrows_over_state, 
-          "Borrower State", 
-          "Count", 
-          list(face = "bold", size=6, angle=45), 
-          list(face="bold",size=6), 
-          "top", 
-          guide = list(keywidth = 0.5, keyheight = 0.5))() %>% 
+theme.set(
+  p_borrows_over_state,
+  "Borrower State",
+  "Count",
+  list(face = "bold", size = 6, angle = 45),
+  list(face = "bold", size = 6),
+  "top",
+  guide = list(keywidth = 0.5, keyheight = 0.5))() %>%
   theme.addcolor()
 ```
-```{r echo=FALSE, fig.retina=2, out.height="100%", out.width="100%"}
-p_mean_by_state <- ggplot(data=mean_by_states, aes(BorrowerState, y=freq*100))+
-  geom_point(colour="white", shape=21, size = 2, aes(fill = LoanStatus))+
-  stat_summary(fun.y="mean", geom="line", aes(group=LoanStatus, color=LoanStatus))
 
-theme.set(p_mean_by_state, 
-          "Borrower State", 
-          "Freq (mean)", 
-          legend_pos = "top",
-          list(face = "bold", size=6, angle=45), 
-          guide = list(keywidth = 0.7, keyheight = 0.7))()
+
+```{r echo=FALSE, fig.retina=2, out.height="100%", out.width="100%"}
+p_mean_by_state <-
+  ggplot(data = mean_by_states, aes(BorrowerState, y = freq * 100)) +
+  geom_point(
+    colour = "white",
+    shape = 21,
+    size = 2,
+    aes(fill = LoanStatus)
+  ) +
+  stat_summary(fun.y = "mean",
+               geom = "line",
+               aes(group = LoanStatus, color = LoanStatus))
+
+theme.set(
+  p_mean_by_state,
+  "Borrower State",
+  "Freq (mean)",
+  legend_pos = "top",
+  list(face = "bold", size = 6, angle = 45),
+  guide = list(keywidth = 0.7, keyheight = 0.7)
+)()
 ```
 
 It is hard to see pattern from first chart as data has skewness and to see more details we converting values into frequencies and plotting mean for each loan status over state. From top 5 states New York has better values of charged-off and defaulted groups. Wyoming has least of charged-off customers over all states that is opposite to Missouri with more than 30% of charged-off customers. Most % of completed loans is in Utah and least of Current. Lets filter out Completed and Current levels to see only "problematic" layers.
 
 ```{r echo=FALSE,  out.width="100%", out.height="100%", fig.retina=2}
-states_count <-loan_df %>% 
-  dplyr::select(BorrowerState, LoanStatus)%>%
-  filter(LoanStatus %in% target_failed)%>%
-  group_by(BorrowerState,LoanStatus) %>% 
-  summarise(n=n()) %>% 
-  mutate(freq=n/sum(n))
+states_count <- loan_df %>%
+  dplyr::select(BorrowerState, LoanStatus) %>%
+  filter(LoanStatus %in% target_failed) %>%
+  group_by(BorrowerState, LoanStatus) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
 
-p_states_count <- ggplot(data=states_count, aes(BorrowerState, y=freq))+
-  geom_point(aes(color=LoanStatus)) + 
-  stat_summary(fun.y="mean", geom="line", aes(group=LoanStatus, color=LoanStatus)) 
+p_states_count <-
+  ggplot(data = states_count, aes(BorrowerState, y = freq)) +
+  geom_point(aes(color = LoanStatus)) +
+  stat_summary(fun.y = "mean",
+               geom = "line",
+               aes(group = LoanStatus, color = LoanStatus))
 
 theme.set(p_states_count, "State", "Freq(mean)", legend_pos = "top")()
 ```
@@ -513,14 +556,18 @@ North Dakota, Montana, New Mexico, Rhode Island, Utah, Alabama, Kansas, Minnesot
 
 ```{r echo=FALSE, out.width="100%"}
 loan_df$LoanAmountShort <- cut_loan(loan_df)
-sub_fail <- subset(loan_df, LoanStatus == "Defaulted" | LoanStatus == "Chargedoff")
+sub_fail <-
+  subset(loan_df, LoanStatus == "Defaulted" |
+           LoanStatus == "Chargedoff")
 
-p_failed_by_incomerange <- ggplot(
-  data=sub_fail, 
-  aes(x=LoanOriginalAmount, y=..count../sum(..count..), 
-      fill=LoanStatus)) + 
-  geom_histogram(binwidth = 1000) + 
-  facet_wrap(~IncomeRange, nrow=1)
+p_failed_by_incomerange <- ggplot(data = sub_fail,
+                                  aes(
+                                    x = LoanOriginalAmount,
+                                    y = ..count.. / sum(..count..),
+                                    fill = LoanStatus
+                                  )) +
+  geom_histogram(binwidth = 1000) +
+  facet_wrap( ~ IncomeRange, nrow = 1)
 
 theme.set(p_failed_by_incomerange, "Loan amount", "Freq", legend_pos = "top")()
 
@@ -530,47 +577,63 @@ Most risky income range interval is 25-50k.
 
 ```{r echo=FALSE, fig.asp=1, out.width="100%"}
 box_int <- ggplot(data=sub_fail,
-       aes(x=1, y=LoanOriginalAmount)) + geom_boxplot(aes(fill=LoanStatus)) +
+                  aes(x=1, y=LoanOriginalAmount)) + geom_boxplot(aes(fill=LoanStatus)) +
   facet_wrap(~IncomeRange, nrow=1, scales="free_y")
 theme.set(box_int, "Income Range", "Loan Amount", legend_pos = "top")()
 ```
 In two groups we are observing exactly the same level of loan means (50-75, 75-100). In 3 others loan means in defaulted group is higher. Lets compare against completed loans.
 ```{r echo=FALSE, fig.asp=0.7, out.width="100%"}
-box_in1<-ggplot(data=subset(loan_df, LoanStatus == "Defaulted" | LoanStatus == "Completed"),
-       aes(x=1, y=LoanOriginalAmount)) + geom_boxplot(aes(fill=LoanStatus)) +
-  facet_wrap(~IncomeRange, nrow=1, scales="free_y")
+box_in1 <-
+  ggplot(
+    data = subset(loan_df, LoanStatus == "Defaulted" |
+                    LoanStatus == "Completed"),
+    aes(x = 1, y = LoanOriginalAmount)
+  ) + geom_boxplot(aes(fill = LoanStatus)) +
+  facet_wrap( ~ IncomeRange, nrow = 1, scales = "free_y")
 theme.set(box_in1, "Income Range", "Loan Amount", legend_pos = "top")()
 ```
 50-75 range means are equal. All the others have the way greater amount of loans.
 
 ```{r echo=FALSE, fig.asp=0.7}
-x_gr <- group_by(sub_fail, IncomeRange, LoanAmountShort,LoanStatus) %>% summarise(n=n(), LOA = mean(LoanOriginalAmount))
-N<-sum(x_gr$n)
-p_violin<- ggplot(data=x_gr, aes(y=n, x=LoanAmountShort, fill=LoanStatus)) + 
-  geom_violin(scale="width")
-p_violin_final <- theme.set(p_violin + ggtitle("Customers per loan bucket"), 
-                            "Loan bucket", "Customers in bucket",
-                            x_element_text = list(face="bold", size=9, angle=90), 
-                            y_element_text = list(face="bold", size=9, angle=0),
-                            legend_pos = "top")
+x_gr <-
+  group_by(sub_fail, IncomeRange, LoanAmountShort, LoanStatus) %>% 
+  summarise(n = n(), LOA = mean(LoanOriginalAmount))
+N <- sum(x_gr$n)
+p_violin <-
+  ggplot(data = x_gr, aes(y = n, x = LoanAmountShort, fill = LoanStatus)) +
+  geom_violin(scale = "width")
+p_violin_final <-
+  theme.set(
+    p_violin + ggtitle("Customers per loan bucket"),
+    "Loan bucket",
+    "Customers in bucket",
+    x_element_text = list(face = "bold", size =
+                            9, angle = 90),
+    y_element_text = list(face = "bold", size =
+                            9, angle = 0),
+    legend_pos = "top"
+  )
 p_violin_final()
 ```
 
 ```{r echo=FALSE, out.width="100%"}
-x_gr_5 <- group_by(sub_fail,IncomeRange, LoanAmountShort, LoanStatus) %>% 
-  summarise(n=n())
-loan5<-filter(x_gr_5, LoanAmountShort == "<5k")
+x_gr_5 <-
+  group_by(sub_fail, IncomeRange, LoanAmountShort, LoanStatus) %>%
+  summarise(n = n())
+loan5 <- filter(x_gr_5, LoanAmountShort == "<5k")
 N <- sum(loan5$n)
-p_failed_short <- ggplot(x_gr_5, aes(IncomeRange, (n/N)*100)) + 
-  geom_bar(aes(fill=LoanStatus), stat = "identity") + 
-  facet_wrap(~LoanAmountShort)
+p_failed_short <- ggplot(x_gr_5, aes(IncomeRange, (n / N) * 100)) +
+  geom_bar(aes(fill = LoanStatus), stat = "identity") +
+  facet_wrap( ~ LoanAmountShort)
 
 p_failed_short_final <- theme.set(
-  p_failed_short + 
-    ggtitle("Customers proportion per income range and loan bucket"), 
-  "Income level [USD]", " % - loan bucket proportion (n/N)", 
-   x_element_text = list(face="bold", size=9, angle=90), 
-   y_element_text = list(face="bold", size=9, angle=0))
+  p_failed_short +
+    ggtitle("Customers proportion per income range and loan bucket"),
+  "Income level [USD]",
+  " % - loan bucket proportion (n/N)",
+  x_element_text = list(face = "bold", size = 9, angle = 90),
+  y_element_text = list(face = "bold", size = 9, angle = 0)
+)
 
 p_failed_short_final()
 ```
@@ -578,21 +641,24 @@ p_failed_short_final()
 We are interested in groups <5k, 5-10k as representatives of most "failed" cases. 10-15k moderate interest. Within 15-20k, 20-50k amount of failed customers quite low under 2.5% but for sake of curiosity in future we could look at group with income range 100+ as there this group goes beyond borders in mentioned ranges.
 
 ```{r echo=FALSE, Univariate_Plots}
-loan_df.sum <- loan_df %>% dplyr::select(LoanOriginalAmount, 
-                                         Term, 
-                                         MonthlyLoanPayment) %>%
-  summarise_all(funs(
-    min = min,
-    max=max,
-    median = median,
-    mean = mean, 
-    q25 = quantile(., 0.25),
-    q75 = quantile(., 0.75),
-    sd = sd
-  ))
+loan_df.sum <- loan_df %>%
+  dplyr::select(LoanOriginalAmount,
+                Term,
+                MonthlyLoanPayment) %>%
+  summarise_all(
+    funs(
+      min = min,
+      max = max,
+      median = median,
+      mean = mean,
+      q25 = quantile(., 0.25),
+      q75 = quantile(., 0.75),
+      sd = sd
+    )
+  )
 
-loan_df.sum %>% gather(stat, val) %>% 
-  separate(stat, into = c("var", "stat"), sep='_') %>% 
+loan_df.sum %>% gather(stat, val) %>%
+  separate(stat, into = c("var", "stat"), sep = '_') %>%
   spread(stat, val) %>%
   dplyr::select(var, min, max, mean, median, sd, q25, q75)
 
@@ -602,28 +668,44 @@ Maximum loan amount taken was 35k I expected it would be much higher. Probably t
 Next we are going to cut LoanOriginalAmount into several groups : 2,4,6,10,15,20,40k and figure out how these levels are related to Borrower APR.
 
 ```{r echo=FALSE, out.width="100%", out.height="100%", fig.retina=2}
+loan_amount <-
+  filter(loan_df, !is.na(LoanOriginalAmount))$LoanOriginalAmount %>%
+  cut(
+    c(0, 2001, 4001, 6001, 10001, 15001, 20001, 40001),
+    labels = c("<2k", "2-4k", "4-6k", "6-10k", "10-15k", "15-20k", "20-40k")
+  )
 
+p_income_apr <- ggplot(data = loan_df, aes(BorrowerAPR)) +
+  geom_histogram(binwidth = 0.01, aes(fill = IncomeRange))
 
+apr1 <- theme.set(
+  p_income_apr,
+  "APR",
+  "Count",
+  guide = list(
+    keywidth = 0.5,
+    keyheight = 0.5,
+    row = 2
+  ),
+  legend_pos = "none"
+)
 
-loan_amount <-filter(loan_df, !is.na(LoanOriginalAmount))$LoanOriginalAmount %>%
-  cut(c(0,2001, 4001, 6001, 10001, 15001, 20001, 40001), 
-      labels = c("<2k","2-4k","4-6k","6-10k","10-15k","15-20k","20-40k"))
+p_loan_amount <- ggplot(data = loan_df, aes(BorrowerAPR)) +
+  geom_histogram(binwidth = 0.01, aes(fill = loan_amount))
 
-p_income_apr <- ggplot(data=loan_df, aes(BorrowerAPR)) + 
-  geom_histogram(binwidth = 0.01, aes(fill=IncomeRange))
+apr2 <- theme.set(
+  p_loan_amount,
+  "APR",
+  "Count",
+  guide = list(
+    keywidth = 0.3,
+    keyheight = 0.3,
+    row = 3
+  ),
+  legend_pos = "top"
+)
 
-apr1 <- theme.set(p_income_apr, "APR", "Count", 
-                  guide = list(keywidth = 0.5, keyheight = 0.5, row=2), 
-                  legend_pos = "none")
-
-p_loan_amount <-ggplot(data=loan_df,aes(BorrowerAPR)) + 
-  geom_histogram(binwidth = 0.01, aes(fill=loan_amount))
-
-apr2 <- theme.set(p_loan_amount, "APR", "Count", 
-                  guide = list(keywidth = 0.3, keyheight = 0.3, row=3), 
-                  legend_pos = "top")
-
-grid.arrange(apr1(),apr2(), nrow=1)
+grid.arrange(apr1(), apr2(), nrow = 1)
 
 ```
 
@@ -633,22 +715,31 @@ Lets introduce last vars I wanted to look at - DelinquenciesLast7Years, CurrentC
 
 ```{r echo=FALSE, fig.retina=2, warning=FALSE, out.width="100%", out.height="100%"}
 
-p_del <- ggplot(data=loan_df,aes(DelinquenciesLast7Years)) + 
-  geom_histogram(aes(color=LoanStatus), binwidth = 1) 
+p_del <- ggplot(data = loan_df, aes(DelinquenciesLast7Years)) +
+  geom_histogram(aes(color = LoanStatus), binwidth = 1)
 
-p_del1 <- theme.set(p_del, "Delinquencies 7 years", "Count", 
-                    guide = list(keywidth = 0.3, keyheight = 0.3), 
-                    legend_pos = "left")
-  
-p_del_log <- ggplot(data=loan_df,aes(DelinquenciesLast7Years)) + 
-  geom_histogram(aes(fill=LoanStatus), binwidth = 33) + 
-  scale_y_log10() 
+p_del1 <- theme.set(
+  p_del,
+  "Delinquencies 7 years",
+  "Count",
+  guide = list(keywidth = 0.3, keyheight = 0.3),
+  legend_pos = "left"
+)
 
-p_del_log1 <- theme.set(p_del_log, "Delinquencies 7 years", "Count", 
-                        guide = list(keywidth = 0.3, keyheight = 0.3),
-                        legend_pos = "none")
+p_del_log <- ggplot(data = loan_df, aes(DelinquenciesLast7Years)) +
+  geom_histogram(aes(fill = LoanStatus), binwidth = 33) +
+  scale_y_log10()
 
-grid.arrange(p_del1(), p_del_log1(), nrow=1)
+p_del_log1 <-
+  theme.set(
+    p_del_log,
+    "Delinquencies 7 years",
+    "Count",
+    guide = list(keywidth = 0.3, keyheight = 0.3),
+    legend_pos = "none"
+  )
+
+grid.arrange(p_del1(), p_del_log1(), nrow = 1)
 ```
 
 Data appears to be super right skewed since 65k customers did not have any delinquencies which is expected. Funny thing there is an outlier at x - 99 that means among customer you could find the ones with that many (~99) minor crimes(debt not paid in time ) committed. Lets zoom in and we see that there are many more others but why does it have local peak at 99-100? Taking closer look to layers below 800 reveals that amount of delinquencies don't have great impact on how often customers getting defaulted and charged-off. On the range between 0 and 30 there is visible amount of defaulted customers but trends getting lower as delinquencies grows. 
@@ -656,8 +747,9 @@ Data appears to be super right skewed since 65k customers did not have any delin
 Excluding "Current" level as the biggest one to see others. Here is CurrentCreditLines colored with Loan statuses. 
 
 ```{r echo=FALSE,out.width="100%", fig.retina=2}
-ggplot(data=filter(loan_df, LoanStatus != "Current"), aes(CurrentCreditLines)) + 
-  geom_bar(aes(fill=LoanStatus)) + scale_fill_manual(values = colors1)
+ggplot(data = filter(loan_df, LoanStatus != "Current"),
+       aes(CurrentCreditLines)) +
+  geom_bar(aes(fill = LoanStatus)) + scale_fill_manual(values = colors1)
 ```
 
 Defaulted zone is in range 0-20 mostly. Distribution follows normal pattern with skeweness to right side. 
@@ -670,24 +762,37 @@ filter(loan_df, LoanStatus != "Current") %>%
 I am excluding "Current" level and converting values into frequencies.
 
 ```{r echo=FALSE, fig.retina=2, warning=FALSE, out.width="100%", out.height="100%"}
-p1 <-ggplot(data=filter(loan_df, 
-                        LoanStatus != "Current" & LoanStatus != "Completed"), 
-            aes(x=CreditScoreRangeLower, y=..count../sum(..count..))) + 
-  geom_histogram(aes(fill=LoanStatus), binwidth = 5) 
+p1 <- ggplot(
+  data = filter(loan_df,
+                LoanStatus != "Current" &
+                  LoanStatus != "Completed"),
+  aes(x = CreditScoreRangeLower, y = ..count.. / sum(..count..))
+) +
+  geom_histogram(aes(fill = LoanStatus), binwidth = 5)
 
-p1_1 <- theme.set(p1, "Credit Score", "Freq", 
-                  guide = list(keywidth = 0.5, keyheight = 0.5), 
-                  legend_pos = "none")
+p1_1 <- theme.set(
+  p1,
+  "Credit Score",
+  "Freq",
+  guide = list(keywidth = 0.5, keyheight = 0.5),
+  legend_pos = "none"
+)
 
-p2 <- ggplot(data=filter(loan_df, LoanStatus != "Current"), 
-             aes(x=CreditScoreRangeLower, y=..count../sum(..count..))) + 
-  geom_histogram(aes(fill=LoanStatus), binwidth = 5)  
+p2 <- ggplot(
+  data = filter(loan_df, LoanStatus != "Current"),
+  aes(x = CreditScoreRangeLower, y = ..count.. / sum(..count..))
+) +
+  geom_histogram(aes(fill = LoanStatus), binwidth = 5)
 
-p2_2 <- theme.set(p2, "Credit Score", "Freq", 
-                  guide = list(keywidth = 0.4, keyheight = 0.4), 
-                  legend_pos = "top")
+p2_2 <- theme.set(
+  p2,
+  "Credit Score",
+  "Freq",
+  guide = list(keywidth = 0.4, keyheight = 0.4),
+  legend_pos = "top"
+)
 
-grid.arrange(p1_1(), p2_2(),nrow=1)
+grid.arrange(p1_1(), p2_2(), nrow = 1)
 ```
 
 
@@ -719,28 +824,32 @@ We are looking at box-plots of "problematic" groups. To have something to compar
 
 ```{r echo=FALSE, out.width="100%", out.height="100%",fig.retina=2}
 completed <- filter(loan_df, LoanStatus %in% c("Completed"))
-failed_loans <- filter(loan_df, LoanStatus %in% c("Chargedoff", "Defaulted"))
-p1 <-ggplot(data=completed, aes(LoanStatus, MonthlyLoanPayment)) + 
-  geom_boxplot() + 
-  coord_cartesian(ylim = c(0,500))+ 
-  facet_wrap(~IncomeRange, nrow=1, scales="free_y")
-p2 <- ggplot(data=completed, aes(LoanStatus, CurrentCreditLines)) + 
-  geom_boxplot() + coord_cartesian(ylim = c(0,20))+ 
-  facet_wrap(~IncomeRange, nrow=1, scales="free_y")
-p3 <- ggplot(data=completed, aes(LoanStatus, LoanOriginalAmount)) + 
-  geom_boxplot() + 
-  coord_cartesian(ylim = c(0,15000))+ 
-  facet_wrap(~IncomeRange, nrow=1, scales="free_y")
+failed_loans <-
+  filter(loan_df, LoanStatus %in% c("Chargedoff", "Defaulted"))
+p1 <- ggplot(data = completed, aes(LoanStatus, MonthlyLoanPayment)) +
+  geom_boxplot() +
+  coord_cartesian(ylim = c(0, 500)) +
+  facet_wrap( ~ IncomeRange, nrow = 1, scales = "free_y")
+p2 <- ggplot(data = completed, aes(LoanStatus, CurrentCreditLines)) +
+  geom_boxplot() + coord_cartesian(ylim = c(0, 20)) +
+  facet_wrap( ~ IncomeRange, nrow = 1, scales = "free_y")
+p3 <- ggplot(data = completed, aes(LoanStatus, LoanOriginalAmount)) +
+  geom_boxplot() +
+  coord_cartesian(ylim = c(0, 15000)) +
+  facet_wrap( ~ IncomeRange, nrow = 1, scales = "free_y")
 
-p1_1<-ggplot(data=failed_loans, aes(LoanStatus, MonthlyLoanPayment)) + 
-  geom_boxplot() + coord_cartesian(ylim = c(0,700)) + 
-  facet_wrap(~IncomeRange, nrow=1, scales="free_y")
-p2_2 <- ggplot(data=failed_loans, aes(LoanStatus, CurrentCreditLines)) + 
-  geom_boxplot() + coord_cartesian(ylim = c(0,20)) + 
-  facet_wrap(~IncomeRange, nrow=1, scales="free_y")
-p3_3 <- ggplot(data=failed_loans, aes(LoanStatus, LoanOriginalAmount)) + 
-  geom_boxplot() + coord_cartesian(ylim = c(0,20000))+ 
-  facet_wrap(~IncomeRange, nrow=1, scales="free_y")
+p1_1 <-
+  ggplot(data = failed_loans, aes(LoanStatus, MonthlyLoanPayment)) +
+  geom_boxplot() + coord_cartesian(ylim = c(0, 700)) +
+  facet_wrap( ~ IncomeRange, nrow = 1, scales = "free_y")
+p2_2 <-
+  ggplot(data = failed_loans, aes(LoanStatus, CurrentCreditLines)) +
+  geom_boxplot() + coord_cartesian(ylim = c(0, 20)) +
+  facet_wrap( ~ IncomeRange, nrow = 1, scales = "free_y")
+p3_3 <-
+  ggplot(data = failed_loans, aes(LoanStatus, LoanOriginalAmount)) +
+  geom_boxplot() + coord_cartesian(ylim = c(0, 20000)) +
+  facet_wrap( ~ IncomeRange, nrow = 1, scales = "free_y")
 
 ```
 
@@ -797,15 +906,15 @@ The better numbers of correlation found here only for failed loans. Will be look
 ### Talk about some of the relationships you observed in this part of the \
 investigation. How did the feature(s) of interest vary with other features in \
 the data set?
-  
-  There is moderate correlation between BorrowerAPR and CreditScoreRangeLower and BorrowerAPR and LoanOriginalAMount.
-  If we introduce loan amount ranges we will see that the greater loan is the lower APR customer given.
 
-  > a) From State to State number of loans with problems (defaulted, prolonged, charged-off) doesn't fluctuate much and it was about __10-12% on average__. From top 5 states New York has better/lower values of charged-off and defaulted groups. Wyoming has least of charged-off customers over all states. Most % of completed loans is in Utah. North Dakota, Montana, New Mexico, Rhode Island, Utah, Alabama, Kansas, Minnesota,Washington, Illinois all of them have somewhat like increased chances to meet "defaulted" customers. I found 5000 rows which don???t belong to any state. 1/3 of the data came from 3 four states : CA, TX, NY as most populated states.
-  > b) Most of loans taken by customer __with income range 25-50k__. Second place take the ones with income 50-75k. __The most "defaulted" borrowers are those with income range $25k-$40k__. Same stands for "Charged off" group. Maximum loan amount taken was 35k. It appears the most popular loan is *4k, second 10k and third 15k respectively*. Only those who earn 100+k has loans greater that 30k. Greatest percentage (7-12.5%) of "charged-off" customers were in group where income belongs to 25-40k range and loan taken not above 7.5k. Same goes for "defaulted" group (~1.25%). Second next group with income range 50-75k.
-  
-  > c) Occupation for most of customers set to ???Other???, second popular was ???Professional??? and 2 next were ???Computer Programmer??? and ???Executive???. 1-25k very rarely seen among loan takers. 100+k well presented across many specialties. There were 603 rows and 781 rows of either Not employed or with $0 income. Strange customers for bank or just errors. Among customer you could find the ones with ~99 minor crimes (debt not paid in time ) committed.
-  
+There is moderate correlation between BorrowerAPR and CreditScoreRangeLower and BorrowerAPR and LoanOriginalAMount.
+If we introduce loan amount ranges we will see that the greater loan is the lower APR customer given.
+
+> a) From State to State number of loans with problems (defaulted, prolonged, charged-off) doesn't fluctuate much and it was about __10-12% on average__. From top 5 states New York has better/lower values of charged-off and defaulted groups. Wyoming has least of charged-off customers over all states. Most % of completed loans is in Utah. North Dakota, Montana, New Mexico, Rhode Island, Utah, Alabama, Kansas, Minnesota,Washington, Illinois all of them have somewhat like increased chances to meet "defaulted" customers. I found 5000 rows which don???t belong to any state. 1/3 of the data came from 3 four states : CA, TX, NY as most populated states.
+> b) Most of loans taken by customer __with income range 25-50k__. Second place take the ones with income 50-75k. __The most "defaulted" borrowers are those with income range $25k-$40k__. Same stands for "Charged off" group. Maximum loan amount taken was 35k. It appears the most popular loan is *4k, second 10k and third 15k respectively*. Only those who earn 100+k has loans greater that 30k. Greatest percentage (7-12.5%) of "charged-off" customers were in group where income belongs to 25-40k range and loan taken not above 7.5k. Same goes for "defaulted" group (~1.25%). Second next group with income range 50-75k.
+
+> c) Occupation for most of customers set to ???Other???, second popular was ???Professional??? and 2 next were ???Computer Programmer??? and ???Executive???. 1-25k very rarely seen among loan takers. 100+k well presented across many specialties. There were 603 rows and 781 rows of either Not employed or with $0 income. Strange customers for bank or just errors. Among customer you could find the ones with ~99 minor crimes (debt not paid in time ) committed.
+
 
 ### Did you observe any interesting relationships between the other features \
 (not the main feature(s) of interest)?
@@ -849,18 +958,41 @@ Just to recall most popular loans were 4k, 10k, 15k.
 Lets split "failed" loans into ranges corresponding to IncomeRange feature.
 
 ```{r echo=FALSE, fig.retina=2, out.width="100%"}
-x<-filter(loan_df, LoanStatus == "Defaulted")
+x <- filter(loan_df, LoanStatus == "Defaulted")
 
-p_score_split <- ggplot(data=x, aes(y=LoanOriginalAmount, x=CreditScoreRangeLower, color=LoanStatus)) + 
-  geom_point(size=.75, alpha=.7, position = 'jitter') + 
-  geom_line(stat="summary", fun.y=median, color="blue") +
-  geom_line(stat="summary", fun.y=quantile, fun.args= list(probs=0.1), color="black", linetype=2) +
-  geom_line(stat="summary", fun.y=quantile, fun.args= list(probs=0.9), color="black", linetype=2) + 
-  facet_wrap(~IncomeRange)
+p_score_split <-
+  ggplot(data = x,
+         aes(y = LoanOriginalAmount, x = CreditScoreRangeLower, color = LoanStatus)) +
+  geom_point(size = .75,
+             alpha = .7,
+             position = 'jitter') +
+  geom_line(stat = "summary",
+            fun.y = median,
+            color = "blue") +
+  geom_line(
+    stat = "summary",
+    fun.y = quantile,
+    fun.args = list(probs = 0.1),
+    color = "black",
+    linetype = 2
+  ) +
+  geom_line(
+    stat = "summary",
+    fun.y = quantile,
+    fun.args = list(probs = 0.9),
+    color = "black",
+    linetype = 2
+  ) +
+  facet_wrap( ~ IncomeRange)
 
 
-theme.set(p_score_split, "Credit Score [points]", "Loan Amount", 
-          guide =list(keywidth = 0.5, keyheight = 0.5), legend_pos = "top")()
+theme.set(
+  p_score_split,
+  "Credit Score [points]",
+  "Loan Amount",
+  guide = list(keywidth = 0.5, keyheight = 0.5),
+  legend_pos = "top"
+)()
 
 ```
 
@@ -868,42 +1000,80 @@ theme.set(p_score_split, "Credit Score [points]", "Loan Amount",
 25-50k and 50-75k are most saturated areas. Problem loans are rarely seen for credit score above 800 in all groups.
 
 ```{r echo=FALSE, fig.retina=2, out.width="100%"}
-x<-filter(loan_df, LoanStatus == "Chargedoff")
+x <- filter(loan_df, LoanStatus == "Chargedoff")
 
-p_charged <- ggplot(data=x, aes(y=LoanOriginalAmount, x=CreditScoreRangeLower, color=LoanStatus)) + 
-  geom_point(size=.75, alpha=.7, position = 'jitter') + 
-  geom_line(stat="summary", fun.y=median, color="blue") +
-  geom_line(stat="summary", fun.y=quantile, fun.args= list(probs=0.1), color="black", linetype=2) +
-  geom_line(stat="summary", fun.y=quantile, fun.args= list(probs=0.9), color="black", linetype=2) + 
-  facet_wrap(~IncomeRange)
+p_charged <-
+  ggplot(data = x,
+         aes(y = LoanOriginalAmount,
+             x = CreditScoreRangeLower, 
+             color = LoanStatus)) +
+  geom_point(size = .75,
+             alpha = .7,
+             position = 'jitter') +
+  geom_line(stat = "summary",
+            fun.y = median,
+            color = "blue") +
+  geom_line(
+    stat = "summary",
+    fun.y = quantile,
+    fun.args = list(probs = 0.1),
+    color = "black",
+    linetype = 2
+  ) +
+  geom_line(
+    stat = "summary",
+    fun.y = quantile,
+    fun.args = list(probs = 0.9),
+    color = "black",
+    linetype = 2
+  ) +
+  facet_wrap( ~ IncomeRange)
 
-theme.set(p_charged, "Credit Score [points]", "Loan Amount", 
-          guide =list(keywidth = 0.5, keyheight = 0.5), legend_pos = "top")()
+theme.set(
+  p_charged,
+  "Credit Score [points]",
+  "Loan Amount",
+  guide = list(keywidth = 0.5, keyheight = 0.5),
+  legend_pos = "top"
+)()
 
 ```
 
 Almost the same idea as for "defaulted" group depicted for "charged-off" but number of cases is the way more. Lets reverse idea and face-wrap by LoanStatus.
 
 ```{r echo=FALSE, fig.retina=2, out.width="100%"}
-fwrap_income <-filter(loan_df, LoanStatus %in% c("Chargedoff", 
-                                                 "Defaulted",
-                                                 "Completed", 
-                                                 "Current")) 
-fw <- ggplot(data=fwrap_income, aes(y=LoanOriginalAmount, 
-                                    x=CreditScoreRangeLower, 
-                                    color=IncomeRange)) + 
-  geom_point(size=.75, alpha=.5, position = 'jitter') + 
-  geom_line(stat="summary", fun.y=median, color="blue") +
-  geom_line(stat="summary", fun.y=quantile, 
-            fun.args= list(probs=0.1), 
-            color="black", linetype=2) +
-  geom_line(stat="summary", 
-            fun.y=quantile, 
-            fun.args= list(probs=0.9), 
-            color="black", linetype=2) + 
-  geom_smooth(method='lm')+
-  facet_wrap(~LoanStatus)
-  theme.set(fw, "Credit Score [points]", "Loan Amount")()
+fwrap_income <- filter(loan_df,
+                       LoanStatus %in% c("Chargedoff",
+                                         "Defaulted",
+                                         "Completed",
+                                         "Current"))
+fw <- ggplot(data = fwrap_income,
+             aes(y = LoanOriginalAmount,
+                 x = CreditScoreRangeLower,
+                 color = IncomeRange)) +
+  geom_point(size = .75,
+             alpha = .5,
+             position = 'jitter') +
+  geom_line(stat = "summary",
+            fun.y = median,
+            color = "blue") +
+  geom_line(
+    stat = "summary",
+    fun.y = quantile,
+    fun.args = list(probs = 0.1),
+    color = "black",
+    linetype = 2
+  ) +
+  geom_line(
+    stat = "summary",
+    fun.y = quantile,
+    fun.args = list(probs = 0.9),
+    color = "black",
+    linetype = 2
+  ) +
+  geom_smooth(method = 'lm') +
+  facet_wrap( ~ LoanStatus)
+theme.set(fw, "Credit Score [points]", "Loan Amount")()
 ```
 
 Customers with income range 100+ are rarely got to the "charged-off" group. For "charged-off" group most of loans were under 15k. Also there were loans given to customers with score below 600 which is not he case for "Current" group where we see only loans for customers with credit score above ~580. Only rich (100+k) "current" borrowers are on the top of loan amount distribution with loans 25k+. I see that data mostly concentrated within several levels like 0-5,5-10,10-15,15+ and keeping in mind most popular loans were 4, 10, 15 I would re-arrange loan original amount levels. Also i am introducing freq column to see trend in % rather then numbers.
@@ -911,36 +1081,60 @@ Customers with income range 100+ are rarely got to the "charged-off" group. For 
 ```{r echo=FALSE}
 
 loan_df$CreditScoreShort <- loan_df$CreditScoreRangeLower %>%
-  cut(c(0,500, 590, 670, 750, 860, 900), 
-      labels = c("<500","500-590","590-670","670-750","750-860", "860-900"))
+  cut(
+    c(0, 500, 590, 670, 750, 860, 900),
+    labels = c("<500", "500-590", "590-670", "670-750", "750-860", "860-900")
+  )
 
-amount_gr <- group_by(loan_df, 
-                      LoanAmountShort, 
-                      LoanStatus, 
-                      IncomeRange, 
-                      CreditScoreShort) %>% 
-  summarise(n=n(), CreditScoreMean = mean(CreditScoreRangeLower), 
-            MonthlyPayment = mean(MonthlyLoanPayment), 
-            CurrentCreditLines=mean(CurrentCreditLines)) %>%
-  mutate(freq=n/sum(n))
+amount_gr <- group_by(loan_df,
+                      LoanAmountShort,
+                      LoanStatus,
+                      IncomeRange,
+                      CreditScoreShort) %>%
+  summarise(
+    n = n(),
+    CreditScoreMean = mean(CreditScoreRangeLower),
+    MonthlyPayment = mean(MonthlyLoanPayment),
+    CurrentCreditLines = mean(CurrentCreditLines)
+  ) %>%
+  mutate(freq = n / sum(n))
 ```
 
 We grouped data on several columns: LoanAmountShort, LoanStatus, IncomeRange, CreditScoreShort. Lets now plot several facet wraps to understand whether it helps converting data this way. First plot depicts means of credit score for several statuses like "charged-off", "completed", "defaulted" and everything is split into several levels based on loan amount (5,10,15,20,25k). Also data has been grouped on IncomeRange.
 
 ```{r echo=FALSE,out.width="100%", fig.retina=2}
-amount_gr_sb <- subset(amount_gr, LoanStatus %in% c("Defaulted", "Chargedoff", "Completed"))
+amount_gr_sb <-
+  subset(amount_gr,
+         LoanStatus %in% c("Defaulted", "Chargedoff", "Completed"))
 
-p_loan_income_ranges <- ggplot(data=amount_gr_sb, aes(x=CreditScoreMean, y=freq)) + 
-  geom_line(aes(color=LoanStatus)) + 
-  facet_wrap(~LoanAmountShort) + 
-  geom_vline(data=amount_gr, xintercept =c(500,590, 670, 750, 860,900), linetype=3) + 
-  geom_point(colour="white", shape=21, size = 2, aes(fill = IncomeRange))+
-  scale_color_manual(values = colors1)+
-  scale_fill_brewer(palette = "Purples")+ 
-  guides(fill = guide_legend(keywidth = 0.3, keyheight = 0.3,  ncol=1)) + 
-  theme(legend.position = "top",  legend.text = element_text(size = 6), 
-        legend.title = element_text(size = 5) , 
-        axis.text.x = element_text(face="bold", size=6))
+p_loan_income_ranges <-
+  ggplot(data = amount_gr_sb, aes(x = CreditScoreMean, y = freq)) +
+  geom_line(aes(color = LoanStatus)) +
+  facet_wrap( ~ LoanAmountShort) +
+  geom_vline(
+    data = amount_gr,
+    xintercept = c(500, 590, 670, 750, 860, 900),
+    linetype = 3
+  ) +
+  geom_point(
+    colour = "white",
+    shape = 21,
+    size = 2,
+    aes(fill = IncomeRange)
+  ) +
+  scale_color_manual(values = colors1) +
+  scale_fill_brewer(palette = "Purples") +
+  guides(fill = guide_legend(
+    keywidth = 0.3,
+    keyheight = 0.3,
+    ncol = 1
+  )) +
+  theme(
+    legend.position = "top",
+    legend.text = element_text(size = 6),
+    legend.title = element_text(size = 5) ,
+    axis.text.x = element_text(face = "bold", size = 6)
+  )
 ```
 
 Here we found several interesting patterns (I know it's a bit overloaded :) 
@@ -954,17 +1148,34 @@ Here we found several interesting patterns (I know it's a bit overloaded :)
 
 ```{r echo=FALSE, out.width="100%", fig.retina=2}
 amount_gr_sb1 <- subset(amount_gr, LoanStatus %in% c("Defaulted"))
-p_loan_failed_income_ranges <- ggplot(data=amount_gr_sb1, aes(x=CreditScoreMean, y=freq)) + 
-  geom_line(aes(color=LoanStatus)) + 
-  facet_wrap(~LoanAmountShort) + 
-  geom_vline(data=amount_gr, xintercept =c(500,590, 670, 750, 860,900), linetype=3) + 
-  geom_point(colour="white", shape=21, size = 2, aes(fill = IncomeRange))+
-  scale_color_manual(values = colors1)+
-  scale_fill_brewer(palette = "Purples")+ 
-  guides(fill = guide_legend(keywidth = 0.3, keyheight = 0.3,  ncol=1)) + 
-  theme(legend.position = "top",  legend.text = element_text(size = 6), 
-        legend.title = element_text(size = 5) , 
-        axis.text.x = element_text(face="bold", size=6))
+p_loan_failed_income_ranges <-
+  ggplot(data = amount_gr_sb1, aes(x = CreditScoreMean, y = freq)) +
+  geom_line(aes(color = LoanStatus)) +
+  facet_wrap( ~ LoanAmountShort) +
+  geom_vline(
+    data = amount_gr,
+    xintercept = c(500, 590, 670, 750, 860, 900),
+    linetype = 3
+  ) +
+  geom_point(
+    colour = "white",
+    shape = 21,
+    size = 2,
+    aes(fill = IncomeRange)
+  ) +
+  scale_color_manual(values = colors1) +
+  scale_fill_brewer(palette = "Purples") +
+  guides(fill = guide_legend(
+    keywidth = 0.3,
+    keyheight = 0.3,
+    ncol = 1
+  )) +
+  theme(
+    legend.position = "top",
+    legend.text = element_text(size = 6),
+    legend.title = element_text(size = 5) ,
+    axis.text.x = element_text(face = "bold", size = 6)
+  )
 p_loan_failed_income_ranges
 ```
 
@@ -972,17 +1183,33 @@ To the previous findings we could add that customers with top income 100k+ were 
 
 ```{r echo=FALSE, out.width="100%", fig.retina=2}
 amount_gr_sb1 <- subset(amount_gr, LoanStatus %in% c("Chargedoff"))
-ggplot(data=amount_gr_sb1, aes(x=CreditScoreMean, y=freq)) + 
-  geom_line(aes(color=LoanStatus)) + 
-  facet_wrap(~LoanAmountShort) + 
-  geom_vline(data=amount_gr, xintercept =c(500,590, 670, 750, 860,900), linetype=3) + 
-  geom_point(colour="white", shape=21, size = 2, aes(fill = IncomeRange))+
-  scale_color_manual(values = colors1)+
-  scale_fill_brewer(palette = "Purples")+ 
-    guides(fill = guide_legend(keywidth = 0.3, keyheight = 0.3, ncol=1)) + 
-  theme(legend.position = "top",  legend.text = element_text(size = 6), 
-        legend.title = element_text(size = 5) , 
-        axis.text.x = element_text(face="bold", size=6))
+ggplot(data = amount_gr_sb1, aes(x = CreditScoreMean, y = freq)) +
+  geom_line(aes(color = LoanStatus)) +
+  facet_wrap( ~ LoanAmountShort) +
+  geom_vline(
+    data = amount_gr,
+    xintercept = c(500, 590, 670, 750, 860, 900),
+    linetype = 3
+  ) +
+  geom_point(
+    colour = "white",
+    shape = 21,
+    size = 2,
+    aes(fill = IncomeRange)
+  ) +
+  scale_color_manual(values = colors1) +
+  scale_fill_brewer(palette = "Purples") +
+  guides(fill = guide_legend(
+    keywidth = 0.3,
+    keyheight = 0.3,
+    ncol = 1
+  )) +
+  theme(
+    legend.position = "top",
+    legend.text = element_text(size = 6),
+    legend.title = element_text(size = 5) ,
+    axis.text.x = element_text(face = "bold", size = 6)
+  )
 ```
 
 ```{r echo=FALSE, fig.retina=2, message=FALSE, warning=FALSE, out.height="70%", out.width="70%"}
@@ -990,23 +1217,30 @@ ggplot(data=amount_gr_sb1, aes(x=CreditScoreMean, y=freq)) +
 amount_gr_sb1 <- subset(amount_gr, LoanStatus %in% c("Defaulted"))
 amount_gr_sb2 <- subset(amount_gr, LoanStatus %in% c("Chargedoff"))
 
-p_ch <- ggplot(data=amount_gr_sb1, aes(CreditScoreShort, freq)) + 
-  geom_bar(stat = "identity",position=position_dodge(),aes(fill=IncomeRange)) + 
-  facet_wrap(~LoanAmountShort) + scale_fill_brewer(palette = "Purples") + 
+p_ch <- ggplot(data = amount_gr_sb1, aes(CreditScoreShort, freq)) +
+  geom_bar(stat = "identity",
+           position = position_dodge(),
+           aes(fill = IncomeRange)) +
+  facet_wrap( ~ LoanAmountShort) + scale_fill_brewer(palette = "Purples") +
   ggtitle("Chargedoff customers proportion per loan bucket for each income range")
 
-p_def <- ggplot(data=amount_gr_sb1, aes(CreditScoreShort, freq)) + 
-  geom_bar(stat = "identity",position=position_dodge(),aes(fill=IncomeRange)) + 
-  facet_wrap(~LoanAmountShort) + scale_fill_brewer(palette = "Purples") + 
-  ggtitle("Chargedoff and Defaulted customers proportion per loan bucket for each income range")
+p_def <- ggplot(data = amount_gr_sb1, aes(CreditScoreShort, freq)) +
+  geom_bar(stat = "identity",
+           position = position_dodge(),
+           aes(fill = IncomeRange)) +
+  facet_wrap( ~ LoanAmountShort) + scale_fill_brewer(palette = "Purples") +
+  ggtitle("Chargedoff and Defaulted customers proportion 
+        per loan bucket for each income range")
 
 ```
 
 ```{r}
-theme.set(p_ch, "Credit score range [points]", "Frequency [%]", legend_pos = "top")()
+theme.set(p_ch, "Credit score range [points]", "Frequency [%]", 
+          legend_pos = "top")()
 ```
 ```{r}
-theme.set(p_def, "Credit score range [points]", "Frequency [%]", legend_pos = "none")()
+theme.set(p_def, "Credit score range [points]", "Frequency [%]", 
+          legend_pos = "none")()
 ```
 
 Most problem credit range is again near 700 within loan range 10-15k for all income ranges but especially for the 75-99k.
@@ -1050,11 +1284,14 @@ I did not find enough of features to build model on.
 
 ```{r echo=FALSE, out.width="100%", fig.retina=2, Plot_One }
 
-theme.set(p_mean_by_state+ scale_y_log10() + ggtitle("Means of loans statuses over states"), 
-          "State", 
-          "Freq in %", 
-          list(face = "bold", size=6, angle=45), 
-          guide = list(keywidth = 0.7, keyheight = 0.7), legend_pos = "top")()
+theme.set(
+  p_mean_by_state + scale_y_log10() + ggtitle("Means of loans statuses over states"),
+  "State",
+  "Freq in %",
+  list(face = "bold", size = 6, angle = 45),
+  guide = list(keywidth = 0.7, keyheight = 0.7),
+  legend_pos = "top"
+  )()
 ```
 
 ### Description One
