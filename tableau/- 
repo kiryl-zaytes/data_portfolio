@@ -1,0 +1,14 @@
+HTTP/1.1 200 OK
+Server: Apache
+Content-Length: 1329
+Content-Type: application/xml;charset=UTF-8
+X-Via-UO-URL: http://onceux.unicornmedia.com/now/ads/vmap/od/auto/31e0061b-9a2a-4287-9acf-0a2917574471/null/00000000-0000-0000-0000-000000000000/content.once?UMLITERAL=midrolls,79&;vindico_dv_app=unicorn&vindico_dv_sdk=5.4&vindico_dv_type=curl%2F7.58.0&sltp;;&UMFKEY=mgid%3Aarc%3Avideo%3Acomedycentral.com%3A45823685-f302-404b-9096-88067021232a&UMBEPARAMplLen=1&UMADPARAM_vmn_ar=false&UMADPARAMcaid=mgid%3Aarc%3Avideo%3Acomedycentral.com%3A45823685-f302-404b-9096-88067021232a&UMADPARAMcsid=unicorn_clipsmax&UMADPARAM_fw_ae=
+X-Referer-From-MG: None
+X-Akamai-Staging: EdgeSuite
+Access-Control-Allow-Origin: *
+Content-Language: en-US
+X-Via-UO-User-Agent: curl/7.58.0
+Cache-Control: max-age=15
+Date: Tue, 13 Mar 2018 23:06:14 GMT
+Connection: keep-alive
+
