@@ -1,6 +1,7 @@
 In this project, I'll train an image classifier to recognize different species of flowers. 
 Lets imagine using something like this in a phone app that tells you the name of the flower your camera is looking at.
-App is organized as console program and could be run using several predifined commands with their keys as below. 
+App is organized as console program and could be run using several predifined commands with their keys as below.     
+Exploratory version stored in jupyter notebook : **Image Classifier Project.ipynb**
 
 Folders structure:
 - **checkpoints** - folder to store checkpoints
