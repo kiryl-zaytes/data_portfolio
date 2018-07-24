@@ -19,6 +19,22 @@ class Cleaner:
         except FileNotFoundError:
             sys.exit()
 
+    @staticmethod
+    def count_nan_columns(df):
+        res = []
+        for c in df.columns:
+            res.append(df[c].isnull().sum())
+        return list(zip(df.columns, res))
+
+    @staticmethod
+    def count_nan_rows(df):
+        return np.array(df.isnull().sum(axis=1).tolist())
+
+    def to_nan(self):
+        for index, r in self.summary.iterrows():
+            m_u = r.missing_or_unknown[1:-1].split(',')
+            ind = self.azdias[r.attribute].isin(m_u)
+            self.azdias.loc[ind, r.attribute] = np.NaN
 
 
 # def load_data(dict_path, sep=';'):
@@ -27,22 +43,22 @@ class Cleaner:
 #     return files
 
 
-def to_nan(df, features_summary):
-    for index, r in features_summary.iterrows():
-        m_u = r.missing_or_unknown[1:-1].split(',')
-        ind = df[r.attribute].isin(m_u)
-        df.loc[ind, r.attribute] = np.NaN
+# def to_nan(df, features_summary):
+#     for index, r in features_summary.iterrows():
+#         m_u = r.missing_or_unknown[1:-1].split(',')
+#         ind = df[r.attribute].isin(m_u)
+#         df.loc[ind, r.attribute] = np.NaN
 
 
-def count_nan_columns(df):
-    res = []
-    for c in df.columns:
-        res.append(df[c].isnull().sum())
-    return list(zip(df.columns, res))
-
-
-def count_nan_rows(df):
-    return df.isnull().sum(axis=1).tolist()
+# def count_nan_columns(df):
+#     res = []
+#     for c in df.columns:
+#         res.append(df[c].isnull().sum())
+#     return list(zip(df.columns, res))
+#
+#
+# def count_nan_rows(df):
+#     return df.isnull().sum(axis=1).tolist()
 
 
 def plot_nans(before, after):
