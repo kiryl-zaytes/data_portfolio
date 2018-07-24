@@ -28,9 +28,9 @@ def plot_bar(points):
 
 if __name__ == '__main__':
     cleaner  = Cleaner(data_paths=data)
-    before_cleaning = Cleaner.count_nan_columns(cleaner.azdias)
+    before_cleaning = Cleaner.count_nan_columns(cleaner._azdias)
     cleaner.to_nan()
-    after_cleaning = Cleaner.count_nan_columns(cleaner.azdias)
+    after_cleaning = Cleaner.count_nan_columns(cleaner._azdias)
     plot_nans(before=before_cleaning, after=after_cleaning)
     sorted_yielder = Cleaner.sort_by_values(dict(after_cleaning))
     plot_bar(list(sorted_yielder))
