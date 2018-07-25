@@ -10,13 +10,13 @@ class TestData(unittest.TestCase):
         self.cleaner = Cleaner(data_paths=data)
 
     def test_load_data(self):
-        self.assertEqual(self.cleaner._azdias.shape, (891221, 85), "Shape of demography data")
+        self.assertEqual(self.cleaner.azdias.shape, (891221, 85), "Shape of demography data")
         self.assertEqual(self.cleaner.customers.shape, (191652, 85), "Shape of customers data")
         self.assertEqual(self.cleaner.summary.shape, (85, 4), "Shape of customers data")
 
     def test_nans(self):
-        nans_col = Cleaner.count_nan_columns(self.cleaner._azdias)
-        nans_row = Cleaner.count_nan_rows(self.cleaner._azdias)
+        nans_col = Cleaner.count_nan_columns(self.cleaner.azdias)
+        nans_row = Cleaner.count_nan_rows(self.cleaner.azdias)
         d = dict(nans_col)
         self.assertEqual(d['CAMEO_DEUG_2015'], 98979)
         self.assertEqual(d['PLZ8_ANTG1'], 116515)
@@ -24,18 +24,19 @@ class TestData(unittest.TestCase):
         self.assertEqual(nans_row.max(), 46)
 
     def test_tonan(self):
-        before_cleaning = Cleaner.count_nan_columns(self.cleaner._azdias)
+        before_cleaning = Cleaner.count_nan_columns(self.cleaner.azdias)
         self.cleaner.to_nan()
-        after_cleaning = Cleaner.count_nan_columns(self.cleaner._azdias)
-        db =  dict(before_cleaning)
+        after_cleaning = Cleaner.count_nan_columns(self.cleaner.azdias)
+        db = dict(before_cleaning)
         da = dict(after_cleaning)
         self.assertEqual(db['AGER_TYP'], 0)
         self.assertEqual(da['AGER_TYP'], 685843)
 
     def test_split(self):
-        l, g = Cleaner.split_by_treshhold(self.cleaner._azdias)
+        l, g = Cleaner.split_by_treshhold(self.cleaner.azdias)
         self.assertEqual(l.shape, (798293, 85))
         self.assertEqual(g.shape, (92928, 85))
+        self.cleaner.azdias = l
 
     def test_recode(self):
         Cleaner.recode(self.cleaner.azdias, 'ANREDE_KZ', 2, 0)
@@ -52,6 +53,11 @@ class TestData(unittest.TestCase):
         self.assertEqual(len(t3), 0)
         self.assertEqual(len(t4), 629528)
         self.assertEqual(len(t5), 168545)
+
+    def test_remap(self):
+        self.cleaner.azdias['PRAEGENDE_JUGENDJAHRE'].apply(Cleaner.remap_jugendjahre())
+        print('')
+
 
 if __name__ == '__main__':
     unittest.main()

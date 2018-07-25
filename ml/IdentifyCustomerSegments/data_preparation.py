@@ -43,8 +43,8 @@ class Cleaner:
     def to_nan(self):
         for index, r in self.summary.iterrows():
             m_u = r.missing_or_unknown[1:-1].split(',')
-            ind = self._azdias[r.attribute].isin(m_u)
-            self._azdias.loc[ind, r.attribute] = np.NaN
+            ind = self.azdias[r.attribute].isin(m_u)
+            self.azdias.loc[ind, r.attribute] = np.NaN
 
     @staticmethod
     def filterout_zeros(dic):
@@ -65,3 +65,20 @@ class Cleaner:
         azdias_less = df.iloc[less_trh.index]
         azdias_gr = df.iloc[gr_trh.index]
         return azdias_less, azdias_gr
+
+    @staticmethod
+    def remap_jugendjahre(new_dec=None, new_mov=None):
+
+        decade_mapping = {1: 1, 2: 1, 3: 2, 4: 2, 5: 3, 6: 3, 7: 3, 8: 4, 9: 4, 10: 5, 11: 5, 12: 5, 13: 5, 14: 6,
+                          15: 6}
+        movement_mapping = {1: 0, 2: 1, 3: 0, 4: 1, 5: 0, 6: 1, 7: 1, 8: 0, 9: 1, 10: 0, 11: 1, 12: 0, 13: 1, 14: 0,
+                            15: 1}
+
+        def convert_mapping(s):
+            if np.isnan(s):
+                new_dec.append(np.nan)
+                new_mov.append(np.nan)
+            else:
+                new_dec.append(decade_mapping[np.int(s)])
+                new_mov.append(movement_mapping[np.int(s)])
+        return convert_mapping
