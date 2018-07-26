@@ -94,7 +94,7 @@ class Cleaner:
         return convert_mapping
 
     def remap_lebensphase(self):
-        mapping = [(1,14), (14,21), (21,24), (24,29), (29,41)]
+        mapping = [(1, 14), (14, 21), (21, 24), (24, 29), (29, 41)]
         ftr = self.azdias['LP_LEBENSPHASE_FEIN']
         new_f = np.full(self.azdias.shape[0], -1)
 
@@ -104,9 +104,8 @@ class Cleaner:
 
         for g, t in enumerate(mapping):
             change(*t, level=g)
-            
-        self.azdias['age'] = new_f
 
+        self.azdias['age'] = new_f
 
     @staticmethod
     def print_values(df, list_feature):
