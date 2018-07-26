@@ -25,6 +25,13 @@ def plot_bar(points):
     plt.setp(ax.get_xticklabels(), rotation='vertical', fontsize=10)
     plt.show()
 
+def plot_bars(dc):
+    fig, ax = plt.subplots(figsize=(20, 8))
+    ax = sns.barplot(x=list(dc.keys()), y=list(dc.values()))
+    plt.setp(ax.get_xticklabels(), rotation='vertical', fontsize=5)
+    plt.show()
+
+
 
 if __name__ == '__main__':
     cleaner  = Cleaner(data_paths=data)

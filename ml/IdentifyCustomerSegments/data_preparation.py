@@ -46,6 +46,15 @@ class Cleaner:
             ind = self.azdias[r.attribute].isin(m_u)
             self.azdias.loc[ind, r.attribute] = np.NaN
 
+    def nan_to_category(self, category_name):
+        attr = self.summary[self.summary.type == 'categorical']['attribute']
+        try:
+            for a in attr:
+                res = self.azdias[a].isnull()
+                self.azdias.loc[res.index, a] = category_name
+        except KeyError:
+            print('Key is not in list' + a)
+
     @staticmethod
     def filterout_zeros(dic):
         return {k: v for k, v in dic.items() if v != 0}
@@ -64,7 +73,7 @@ class Cleaner:
         gr_trh = missing_rows[missing_rows.amount >= treshold]
         azdias_less = df.iloc[less_trh.index]
         azdias_gr = df.iloc[gr_trh.index]
-        return azdias_less, azdias_gr
+        return azdias_less, azdias_gr, less_trh, gr_trh
 
     @staticmethod
     def remap_jugendjahre(new_dec=None, new_mov=None):
@@ -81,4 +90,25 @@ class Cleaner:
             else:
                 new_dec.append(decade_mapping[np.int(s)])
                 new_mov.append(movement_mapping[np.int(s)])
+
         return convert_mapping
+
+    def remap_lebensphase(self):
+        mapping = [(1,14), (14,21), (21,24), (24,29), (29,41)]
+        ftr = self.azdias['LP_LEBENSPHASE_FEIN']
+        new_f = np.full(self.azdias.shape[0], -1)
+
+        def change(i, j, level=0):
+            ind = (ftr.values >= i) & (ftr.values < j)
+            new_f[ind] = level
+
+        for g, t in enumerate(mapping):
+            change(*t, level=g)
+            
+        self.azdias['age'] = new_f
+
+
+    @staticmethod
+    def print_values(df, list_feature):
+        for x in list_feature:
+            print('{}\n {}'.format(x, df[x].value_counts()))
