@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import sys
 
+from config import features_codes_toremap
+
 
 class Cleaner:
     def __init__(self, data_paths, sep=';'):
@@ -77,11 +79,8 @@ class Cleaner:
 
     @staticmethod
     def remap_jugendjahre(new_dec=None, new_mov=None):
-
-        decade_mapping = {1: 1, 2: 1, 3: 2, 4: 2, 5: 3, 6: 3, 7: 3, 8: 4, 9: 4, 10: 5, 11: 5, 12: 5, 13: 5, 14: 6,
-                          15: 6}
-        movement_mapping = {1: 0, 2: 1, 3: 0, 4: 1, 5: 0, 6: 1, 7: 1, 8: 0, 9: 1, 10: 0, 11: 1, 12: 0, 13: 1, 14: 0,
-                            15: 1}
+        decade_mapping = features_codes_toremap['mapping_decade']
+        movement_mapping = features_codes_toremap['mapping_movement']
 
         def convert_mapping(s):
             if np.isnan(s):
@@ -94,20 +93,28 @@ class Cleaner:
         return convert_mapping
 
     def remap_lebensphase(self):
-        mapping = [(1, 14), (14, 21), (21, 24), (24, 29), (29, 41)]
-        ftr = self.azdias['LP_LEBENSPHASE_FEIN']
-        new_f = np.full(self.azdias.shape[0], -1)
 
-        def change(i, j, level=0):
-            ind = (ftr.values >= i) & (ftr.values < j)
-            new_f[ind] = level
+        ftr = self.azdias['LP_LEBENSPHASE_FEIN']  # add to drop list and GB
 
-        for g, t in enumerate(mapping):
-            change(*t, level=g)
+        def age():
+            new_f = np.full(self.azdias.shape[0], -1)
+            for g, t in enumerate(features_codes_toremap['mapping_age']):
+                ind = (ftr.values >= t[0]) & (ftr.values < t[1])
+                new_f[ind] = g
+            self.azdias['age'] = new_f
 
-        self.azdias['age'] = new_f
+        def income(mapp, name):
+            new_f = np.full(self.azdias.shape[0], -1)
+            for k, v in mapp.items():
+                new_f[ftr.isin(v)] = k
+            self.azdias[name] = new_f
 
-    @staticmethod
-    def print_values(df, list_feature):
-        for x in list_feature:
-            print('{}\n {}'.format(x, df[x].value_counts()))
+        age()
+        income(features_codes_toremap['mapping_income'], 'income')
+        income(features_codes_toremap['mapping_group'], 'group')
+
+
+@staticmethod
+def print_values(df, list_feature):
+    for x in list_feature:
+        print('{}\n {}'.format(x, df[x].value_counts()))
