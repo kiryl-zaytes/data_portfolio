@@ -31,8 +31,6 @@ def plot_bars(dc):
     plt.setp(ax.get_xticklabels(), rotation='vertical', fontsize=5)
     plt.show()
 
-
-
 if __name__ == '__main__':
     cleaner  = Cleaner(data_paths=data)
     before_cleaning = Cleaner.count_nan_columns(cleaner._azdias)

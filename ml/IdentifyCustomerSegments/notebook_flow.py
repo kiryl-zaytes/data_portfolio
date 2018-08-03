@@ -19,27 +19,29 @@ if __name__ == '__main__':
         return before_cleaning, after_cleaning, l.shape, g.shape
 
 
-    def recode():
-        Cleaner.recode(cleaner.azdias, 'ANREDE_KZ', 2, 0)
-        Cleaner.recode(cleaner.azdias, 'OST_WEST_KZ', 'O', 0)
-        Cleaner.recode(cleaner.azdias, 'OST_WEST_KZ', 'W', 1)
+    def recode(df):
+        df = Cleaner.recode(df, 'ANREDE_KZ', 2, 0)
+        df = Cleaner.recode(df, 'OST_WEST_KZ', 'O', 0)
+        df = Cleaner.recode(df, 'OST_WEST_KZ', 'W', 1)
+        return df
 
 
-    def extract_features():
+    def extract_features(df):
         new_dec = []
         new_mov = []
         to_apply = Cleaner.remap_jugendjahre(new_dec=new_dec, new_mov=new_mov)
-        cleaner.azdias['PRAEGENDE_JUGENDJAHRE'].apply(to_apply)
-        cleaner.azdias['decade'] = np.array(new_dec)
-        cleaner.azdias['movement'] = np.array(new_mov)
-        cleaner.azdias['wealth'] = cleaner.azdias['CAMEO_INTL_2015'].str[0]
-        cleaner.azdias['life_stage'] = cleaner.azdias['CAMEO_INTL_2015'].str[1]
+        df['PRAEGENDE_JUGENDJAHRE'].apply(to_apply)
+        df['decade'] = np.array(new_dec)
+        df['movement'] = np.array(new_mov)
+        df['wealth'] = df['CAMEO_INTL_2015'].str[0]
+        df['life_stage'] = df['CAMEO_INTL_2015'].str[1]
       #  cleaner.azdias = cleaner.azdias.drop(['CAMEO_INTL_2015', 'PRAEGENDE_JUGENDJAHRE', 'LP_LEBENSPHASE_GROB'],
                                             # axis=1)
         new_mov, new_dec = None, None
+        return df
 
-    def drop():
-        cleaner.azdias = cleaner.azdias.drop(['AGER_TYP',
+    def drop(df):
+        return df.drop(['AGER_TYP',
                                               'TITEL_KZ',
                                               'KK_KUNDENTYP',
                                               'KBA05_BAUMAX',
@@ -52,7 +54,7 @@ if __name__ == '__main__':
                                               'LP_LEBENSPHASE_GROB'],
                                              axis=1)
 
-    def dummies():
+    def dummies(df):
         cols = ['LP_FAMILIE_GROB',
                 'LP_STATUS_GROB',
                 'SHOPPER_TYP',
@@ -70,7 +72,24 @@ if __name__ == '__main__':
                 'life_stage',
                 'ALTER_HH'
                 ]
-        cleaner.azdias = pd.get_dummies(cleaner.azdias, columns=cols)
+        df = pd.get_dummies(df, columns=cols)
+        return df
+
+
+def clean_data(df):
+    l, g, less_trh, gr_trh = Cleaner.split_by_treshhold(df, treshold=34)
+    df = l
+    df = Cleaner.to_nan(df, cleaner.summary)
+    df = recode(df)
+    df = extract_features(df)
+    df = drop(df)
+    df = dummies(df)
+    return df
+
+
+
+clean_data(cleaner.customers)
+
 
 split_by_missingvalues()
 recode()

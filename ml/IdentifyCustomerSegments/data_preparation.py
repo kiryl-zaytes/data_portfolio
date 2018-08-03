@@ -42,11 +42,13 @@ class Cleaner:
     def count_nan_rows(df):
         return np.array(df.isnull().sum(axis=1).tolist())
 
-    def to_nan(self):
-        for index, r in self.summary.iterrows():
+    @staticmethod
+    def to_nan(df, mapping):
+        for index, r in mapping.iterrows():
             m_u = r.missing_or_unknown[1:-1].split(',')
-            ind = self.azdias[r.attribute].isin(m_u)
-            self.azdias.loc[ind, r.attribute] = np.NaN
+            ind = df[r.attribute].isin(m_u)
+            df.loc[ind, r.attribute] = np.NaN
+        return df
 
     def nan_to_category(self, category_name):
         attr = self.summary[self.summary.type == 'categorical']['attribute']
@@ -56,6 +58,7 @@ class Cleaner:
                 self.azdias.loc[res.index, a] = category_name
         except KeyError:
             print('Key is not in list' + a)
+
 
     @staticmethod
     def filterout_zeros(dic):
@@ -92,29 +95,30 @@ class Cleaner:
 
         return convert_mapping
 
-    def remap_lebensphase(self):
+    @staticmethod
+    def remap_lebensphase(df):
 
-        ftr = self.azdias['LP_LEBENSPHASE_FEIN']  # add to drop list and GB
+        ftr = df['LP_LEBENSPHASE_FEIN']  # add to drop list and GB
 
         def age():
-            new_f = np.full(self.azdias.shape[0], -1)
+            new_f = np.full(df.shape[0], -1)
             for g, t in enumerate(features_codes_toremap['mapping_age']):
-                ind = (ftr.values >= t[0]) & (ftr.values < t[1])
+                ind = ((ftr.values >= t[0]) & (ftr.values < t[1]))
                 new_f[ind] = g
-            self.azdias['age'] = new_f
+            df['age'] = new_f
 
         def income(mapp, name):
-            new_f = np.full(self.azdias.shape[0], -1)
+            new_f = np.full(df.shape[0], -1)
             for k, v in mapp.items():
                 new_f[ftr.isin(v)] = k
-            self.azdias[name] = new_f
+            df[name] = new_f
 
         age()
         income(features_codes_toremap['mapping_income'], 'income')
         income(features_codes_toremap['mapping_group'], 'group')
 
 
-@staticmethod
-def print_values(df, list_feature):
-    for x in list_feature:
-        print('{}\n {}'.format(x, df[x].value_counts()))
+    @staticmethod
+    def print_values(df, list_feature):
+        for x in list_feature:
+            print('{}\n {}'.format(x, df[x].value_counts()))
